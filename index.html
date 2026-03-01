@@ -3,136 +3,303 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HR Data Validator - Optimized</title>
+    <title>HR Data Integrity Tool</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; --danger: #dc2626; --success: #10b981; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); padding: 2rem; }
-        .card { max-width: 1200px; margin: 0 auto; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
-        .file-input { border: 2px dashed #cbd5e1; padding: 20px; border-radius: 8px; text-align: center; background: #fff; transition: 0.3s; }
-        .file-input:hover { border-color: var(--primary); background: #f0f7ff; }
-        button { width: 100%; padding: 0.8rem; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; margin-bottom: 10px; transition: 0.2s; }
-        .btn-run { background: var(--primary); color: white; }
-        .btn-run:hover { background: #1d4ed8; }
-        .btn-download { background: var(--success); color: white; display: none; }
-        table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; font-size: 0.85rem; background: white; }
-        th { background: #f1f5f9; padding: 12px; text-align: left; border: 1px solid #e2e8f0; font-weight: 600; }
-        td { padding: 10px; border: 1px solid #e2e8f0; vertical-align: middle; }
-        .mismatch { color: var(--danger); font-weight: bold; background: #fee2e2; }
-        .summary-box { padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none; }
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --error-bg: #fef2f2;
+            --error-text: #991b1b;
+            --success-bg: #f0fdf4;
+            --success-text: #166534;
+            --border: #e5e7eb;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1100px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2rem;
+            color: var(--text-main);
+        }
+
+        header p {
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 32px;
+            border-radius: 16px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border);
+        }
+
+        .upload-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .drop-zone:hover {
+            border-color: var(--primary);
+            background-color: #f9fafb;
+        }
+
+        .drop-zone label {
+            display: block;
+            cursor: pointer;
+        }
+
+        .drop-zone span {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .drop-zone small {
+            color: var(--text-muted);
+        }
+
+        input[type="file"] {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+            border: none;
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-success { background: #059669; color: white; display: none; }
+        .btn-success:hover { background: #047857; }
+
+        #summary {
+            margin-top: 24px;
+            padding: 16px;
+            border-radius: 8px;
+            display: none;
+            font-weight: 500;
+        }
+
+        .table-container {
+            margin-top: 32px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th {
+            background: #f8fafc;
+            padding: 14px;
+            text-align: left;
+            border-bottom: 2px solid var(--border);
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        td {
+            padding: 14px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            background: #f1f5f9;
+        }
+
+        .val-mismatch {
+            color: var(--error-text);
+            background: var(--error-bg);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .val-source {
+            color: var(--success-text);
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2 style="margin-top:0;">HR Data Validator</h2>
-    <p>Comparing files using <b>PERSON_NUMBER</b> as the unique ID.</p>
-    
-    <div class="grid">
-        <div class="file-input">
-            <strong>Active Employee List</strong><br>
-            <input type="file" id="activeFile" accept=".xlsx, .xls">
+<div class="container">
+    <header>
+        <h1>HR Data Validator</h1>
+        <p>Verifying Contract Management against Active Employee List</p>
+    </header>
+
+    <div class="card">
+        <div class="upload-section">
+            <div class="drop-zone">
+                <label>
+                    <span>Source of Truth</span>
+                    <small>Active Employee List (.xlsx)</small>
+                    <input type="file" id="activeFile" accept=".xlsx, .xls">
+                </label>
+            </div>
+            <div class="drop-zone">
+                <label>
+                    <span>File to Validate</span>
+                    <small>Contract Management File (.xlsx)</small>
+                    <input type="file" id="contractFile" accept=".xlsx, .xls">
+                </label>
+            </div>
         </div>
-        <div class="file-input">
-            <strong>Contract Management File</strong><br>
-            <input type="file" id="contractFile" accept=".xlsx, .xls">
+
+        <div class="controls">
+            <button class="btn-primary" onclick="runValidation()">Compare Data</button>
+            <button id="downloadBtn" class="btn-success" onclick="exportToExcel()">Download Error Report</button>
         </div>
+
+        <div id="summary"></div>
+
+        <div class="table-container" id="resultsContainer"></div>
     </div>
-
-    <button class="btn-run" onclick="processValidation()">Run Validation Scan</button>
-    <button id="downloadBtn" class="btn-download" onclick="downloadErrorReport()">Download Error Report (.xlsx)</button>
-
-    <div id="summary" class="summary-box"></div>
-    <div id="resultsTable"></div>
 </div>
 
 <script>
-let lastErrors = [];
+let errorLog = [];
 
-// Helper to format values correctly for comparison
-function normalizeValue(val, columnName) {
+function normalize(val, col) {
     if (val === undefined || val === null || val === "") return "";
     
-    // 1. Handle AGE_HIJRI (Rounding to closest integer)
-    if (columnName === 'AGE_HIJRI') {
+    // Logic: Round AGE_HIJRI to nearest integer
+    if (col === 'AGE_HIJRI') {
         const num = parseFloat(val);
         return isNaN(num) ? "" : Math.round(num).toString();
     }
 
-    // 2. Handle Date Objects (Standardize to YYYY-MM-DD)
+    // Logic: Standardize Dates (YYYY-MM-DD)
     if (val instanceof Date) {
         return val.toISOString().split('T')[0];
     }
-
-    // 3. Handle Excel Date Serial Numbers (e.g. 45352)
     if (typeof val === 'number' && val > 30000 && val < 60000) {
-        const date = XLSX.SSF.parse_date_code(val);
-        const m = String(date.m).padStart(2, '0');
-        const d = String(date.d).padStart(2, '0');
-        return `${date.y}-${m}-${d}`;
+        const d = XLSX.SSF.parse_date_code(val);
+        return `${d.y}-${String(d.m).padStart(2, '0')}-${String(d.d).padStart(2, '0')}`;
     }
 
-    // 4. Default: Trim and convert to String
     return String(val).trim();
 }
 
-async function processValidation() {
-    const fileA = document.getElementById('activeFile').files[0];
-    const fileC = document.getElementById('contractFile').files[0];
+async function runValidation() {
+    const fileActive = document.getElementById('activeFile').files[0];
+    const fileContract = document.getElementById('contractFile').files[0];
 
-    if (!fileA || !fileC) {
-        alert("Please select both files.");
+    if (!fileActive || !fileContract) {
+        alert("Please upload both files to begin.");
         return;
     }
 
-    const dataA = await readExcel(fileA);
-    const dataC = await readExcel(fileC);
+    const activeRows = await readXlsx(fileActive);
+    const contractRows = await readXlsx(fileContract);
 
-    // Updated column list as per your requirements
-    const columns = [
+    const checkCols = [
         'NATIONALITY', 'WORKER_TYPE', 'Age_H', 'AGE_HIJRI', 
         'JOB_NAME', 'CONTRACT_END_DATE', 'PERFORMANCE_EVALUATION_TYPE', 
         '2024_Evaluation', '2025_Evaluation'
     ];
 
-    const activeMap = new Map();
-    dataA.forEach(row => {
-        if (row.PERSON_NUMBER) activeMap.set(String(row.PERSON_NUMBER), row);
+    // Map the Active List (Source of Truth)
+    const sourceMap = new Map();
+    activeRows.forEach(row => {
+        if (row.PERSON_NUMBER) sourceMap.set(String(row.PERSON_NUMBER), row);
     });
 
-    const errors = [];
+    errorLog = [];
 
-    dataC.forEach(cRow => {
-        const pId = String(cRow.PERSON_NUMBER || '');
-        const aRow = activeMap.get(pId);
+    // Loop through Contract File (The one we are checking)
+    contractRows.forEach(cRow => {
+        const id = String(cRow.PERSON_NUMBER || '');
+        const sRow = sourceMap.get(id);
 
-        if (aRow) {
-            columns.forEach(col => {
-                const valA = normalizeValue(aRow[col], col);
-                const valC = normalizeValue(cRow[col], col);
+        if (sRow) {
+            checkCols.forEach(col => {
+                const sourceVal = normalize(sRow[col], col);
+                const contractVal = normalize(cRow[col], col);
 
-                if (valA !== valC) {
-                    errors.push({
-                        "Person Number": pId,
-                        "Full Name": aRow.FULL_NAME_G || 'N/A',
-                        "Field": col,
-                        "Active List Value": valA,
-                        "Contract File Value": valC
+                if (sourceVal !== contractVal) {
+                    errorLog.push({
+                        "Person Number": id,
+                        "Full Name": sRow.FULL_NAME_G || 'N/A',
+                        "Discrepancy Field": col,
+                        "Expected (Active List)": sourceVal,
+                        "Found (Contract File)": contractVal
                     });
                 }
             });
         }
     });
 
-    lastErrors = errors;
-    displayResults(errors);
+    renderUI();
 }
 
-function readExcel(file) {
-    return new Promise((resolve) => {
+function readXlsx(file) {
+    return new Promise(resolve => {
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = e => {
             const data = new Uint8Array(e.target.result);
             const wb = XLSX.read(data, { type: 'array', cellDates: true });
             resolve(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]));
@@ -141,51 +308,49 @@ function readExcel(file) {
     });
 }
 
-function displayResults(errors) {
-    const container = document.getElementById('resultsTable');
+function renderUI() {
     const summary = document.getElementById('summary');
+    const container = document.getElementById('resultsContainer');
     const dlBtn = document.getElementById('downloadBtn');
 
     summary.style.display = "block";
-
-    if (errors.length === 0) {
-        summary.innerHTML = "✅ All records match perfectly!";
-        summary.style.background = "#dcfce7";
-        summary.style.color = "#166534";
+    
+    if (errorLog.length === 0) {
+        summary.style.background = "var(--success-bg)";
+        summary.style.color = "var(--success-text)";
+        summary.innerHTML = "✅ Perfect Match! The Contract Management file is fully aligned with the Active List.";
         container.innerHTML = "";
         dlBtn.style.display = "none";
-        return;
+    } else {
+        summary.style.background = "var(--error-bg)";
+        summary.style.color = "var(--error-text)";
+        summary.innerHTML = `⚠️ Found ${errorLog.length} errors in the Contract Management file.`;
+        dlBtn.style.display = "block";
+
+        let html = `<table><thead><tr>
+            <th>Employee</th><th>Field</th><th>Active List (Correct)</th><th>Contract File (Incorrect)</th>
+        </tr></thead><tbody>`;
+
+        errorLog.forEach(err => {
+            html += `<tr>
+                <td><span class="badge">${err["Person Number"]}</span><br><strong>${err["Full Name"]}</strong></td>
+                <td><code>${err["Discrepancy Field"]}</code></td>
+                <td class="val-source">${err["Expected (Active List)"]}</td>
+                <td><span class="val-mismatch">${err["Found (Contract File)"]}</span></td>
+            </tr>`;
+        });
+        html += `</tbody></table>`;
+        container.innerHTML = html;
     }
-
-    summary.innerHTML = `⚠️ Found <b>${errors.length}</b> discrepancies. Review the table below.`;
-    summary.style.background = "#fee2e2";
-    summary.style.color = "#991b1b";
-    dlBtn.style.display = "block";
-
-    let html = `<table><tr>
-        <th>ID</th><th>Full Name</th><th>Column</th><th>Active List Value</th><th>Contract File Value</th>
-    </tr>`;
-
-    errors.forEach(err => {
-        html += `<tr>
-            <td>${err["Person Number"]}</td>
-            <td>${err["Full Name"]}</td>
-            <td>${err["Field"]}</td>
-            <td>${err["Active List Value"]}</td>
-            <td class="mismatch">${err["Contract File Value"]}</td>
-        </tr>`;
-    });
-
-    html += `</table>`;
-    container.innerHTML = html;
 }
 
-function downloadErrorReport() {
-    const ws = XLSX.utils.json_to_sheet(lastErrors);
+function exportToExcel() {
+    const ws = XLSX.utils.json_to_sheet(errorLog);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Discrepancies");
-    XLSX.writeFile(wb, "HR_Validation_Report.xlsx");
+    XLSX.utils.book_append_sheet(wb, ws, "Errors");
+    XLSX.writeFile(wb, "Contract_Validation_Errors.xlsx");
 }
 </script>
+
 </body>
 </html>
