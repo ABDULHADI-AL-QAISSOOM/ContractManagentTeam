@@ -3,31 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional Data Validator</title>
+    <title>Excel Data Validator</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 2rem; }
-        .card { max-width: 1100px; margin: 0 auto; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; --danger: #dc2626; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 2rem; }
+        .card { max-width: 1200px; margin: 0 auto; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
-        .file-input { border: 2px dashed #cbd5e1; padding: 1.5rem; border-radius: 8px; text-align: center; cursor: pointer; }
-        .file-input:hover { border-color: var(--primary); background: #eff6ff; }
-        button { width: 100%; padding: 0.75rem; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; margin-bottom: 10px; }
+        .file-input { border: 2px dashed #cbd5e1; padding: 1.5rem; border-radius: 8px; text-align: center; }
+        button { width: 100%; padding: 0.8rem; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; margin-bottom: 10px; }
         .btn-run { background: var(--primary); color: white; }
-        .btn-run:hover { background: #1d4ed8; }
         .btn-download { background: #10b981; color: white; display: none; }
-        table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; font-size: 0.9rem; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; font-size: 0.85rem; }
         th { background: #f1f5f9; padding: 12px; text-align: left; border: 1px solid #e2e8f0; }
         td { padding: 10px; border: 1px solid #e2e8f0; }
-        .mismatch { color: #dc2626; font-weight: bold; background: #fee2e2; }
-        .empty { color: #94a3b8; font-style: italic; }
+        .mismatch { color: var(--danger); font-weight: bold; background: #fee2e2; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>Excel Data Validator</h2>
-    <p>Upload both files to compare matching columns using <strong>PERSON_NUMBER</strong>.</p>
+    <h2>HR Data Validator</h2>
+    <p>Validating 10 columns across files based on <b>PERSON_NUMBER</b>.</p>
     
     <div class="grid">
         <div class="file-input">
@@ -48,28 +45,46 @@
 </div>
 
 <script>
-let lastErrors = []; // Global store for downloading
+let lastErrors = [];
+
+// Helper function to handle Excel Date Serial Numbers vs Strings
+function formatValue(val) {
+    if (val === undefined || val === null) return "";
+    
+    // Check if it's an Excel Date (often imported as a Date Object by SheetJS)
+    if (val instanceof Date) {
+        return val.toISOString().split('T')[0]; // Returns YYYY-MM-DD
+    }
+    
+    // If it's a number that looks like an Excel date serial (e.g., 40000+)
+    if (typeof val === 'number' && val > 30000 && val < 60000) {
+        const date = XLSX.SSF.parse_date_code(val);
+        const month = String(date.m).padStart(2, '0');
+        const day = String(date.d).padStart(2, '0');
+        return `${date.y}-${month}-${day}`;
+    }
+
+    return String(val).trim();
+}
 
 async function processValidation() {
     const fileA = document.getElementById('activeFile').files[0];
     const fileC = document.getElementById('contractFile').files[0];
 
     if (!fileA || !fileC) {
-        alert("Please select both Excel files.");
+        alert("Please select both files.");
         return;
     }
 
     const dataA = await readExcel(fileA);
     const dataC = await readExcel(fileC);
 
-    // Columns to validate (matching exactly on both files)
     const columns = [
-        'NATIONALITY', 'WORKER_CATEGORY', 'Age_H', 'JOB_NAME', 
-        'CONTRACT_END_DATE', 'PERFORMANCE_EVALUATION_TYPE', 
+        'NATIONALITY', 'WORKER_CATEGORY', 'Age_H', 'AGE_HIJRI', 
+        'JOB_NAME', 'CONTRACT_END_DATE', 'PERFORMANCE_EVALUATION_TYPE', 
         '2024_Evaluation', '2025_Evaluation'
     ];
 
-    // Create Map for Active List (Source of Truth)
     const activeMap = new Map();
     dataA.forEach(row => {
         if (row.PERSON_NUMBER) activeMap.set(String(row.PERSON_NUMBER), row);
@@ -77,23 +92,22 @@ async function processValidation() {
 
     const errors = [];
 
-    // Compare Contract File against Active Map
     dataC.forEach(cRow => {
         const pId = String(cRow.PERSON_NUMBER || '');
         const aRow = activeMap.get(pId);
 
         if (aRow) {
             columns.forEach(col => {
-                const valA = String(aRow[col] || '').trim();
-                const valC = String(cRow[col] || '').trim();
+                const valA = formatValue(aRow[col]);
+                const valC = formatValue(cRow[col]);
 
                 if (valA !== valC) {
                     errors.push({
                         "Person Number": pId,
                         "Full Name": aRow.FULL_NAME_G || 'Unknown',
                         "Field": col,
-                        "Active List Value": valA || '(Empty)',
-                        "Contract File Value": valC || '(Empty)'
+                        "Active List Value": valA,
+                        "Contract File Value": valC
                     });
                 }
             });
@@ -109,7 +123,8 @@ function readExcel(file) {
         const reader = new FileReader();
         reader.onload = (e) => {
             const data = new Uint8Array(e.target.result);
-            const wb = XLSX.read(data, { type: 'array' });
+            // cellDates: true ensures SheetJS tries to parse dates automatically
+            const wb = XLSX.read(data, { type: 'array', cellDates: true });
             resolve(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]));
         };
         reader.readAsArrayBuffer(file);
@@ -128,11 +143,11 @@ function displayResults(errors) {
         return;
     }
 
-    summary.innerHTML = `<h3>⚠️ Found ${errors.length} discrepancies</h3>`;
+    summary.innerHTML = `<h3>⚠️ Found ${errors.length} Mismatches</h3>`;
     dlBtn.style.display = "block";
 
     let html = `<table><tr>
-        <th>ID</th><th>Name</th><th>Column Name</th><th>Active List</th><th>Contract File</th>
+        <th>ID</th><th>Name</th><th>Field</th><th>Active List</th><th>Contract File</th>
     </tr>`;
 
     errors.forEach(err => {
@@ -150,13 +165,11 @@ function displayResults(errors) {
 }
 
 function downloadErrorReport() {
-    if (lastErrors.length === 0) return;
     const worksheet = XLSX.utils.json_to_sheet(lastErrors);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Discrepancies");
-    XLSX.writeFile(workbook, "Validation_Error_Report.xlsx");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Errors");
+    XLSX.writeFile(workbook, "Validation_Report.xlsx");
 }
 </script>
-
 </body>
 </html>
