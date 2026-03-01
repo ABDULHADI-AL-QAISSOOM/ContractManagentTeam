@@ -3,95 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Excel Data Validator</title>
+    <title>Professional Data Validator</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 40px; background-color: #f9f9f9; }
-        .container { max-width: 1000px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h2 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
-        .file-input-group { border: 2px dashed #cbd5e0; padding: 20px; border-radius: 8px; text-align: center; transition: 0.3s; }
-        .file-input-group:hover { border-color: #3182ce; background-color: #f7fafc; }
-        input[type="file"] { margin-top: 10px; }
-        button { width: 100%; background-color: #2b6cb0; color: white; padding: 12px; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold; }
-        button:hover { background-color: #2c5282; }
-        table { width: 100%; border-collapse: collapse; margin-top: 30px; font-size: 14px; }
-        th { background-color: #edf2f7; color: #4a5568; text-align: left; padding: 12px; border: 1px solid #e2e8f0; }
+        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 2rem; }
+        .card { max-width: 1100px; margin: 0 auto; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+        .file-input { border: 2px dashed #cbd5e1; padding: 1.5rem; border-radius: 8px; text-align: center; cursor: pointer; }
+        .file-input:hover { border-color: var(--primary); background: #eff6ff; }
+        button { width: 100%; padding: 0.75rem; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; margin-bottom: 10px; }
+        .btn-run { background: var(--primary); color: white; }
+        .btn-run:hover { background: #1d4ed8; }
+        .btn-download { background: #10b981; color: white; display: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; font-size: 0.9rem; }
+        th { background: #f1f5f9; padding: 12px; text-align: left; border: 1px solid #e2e8f0; }
         td { padding: 10px; border: 1px solid #e2e8f0; }
-        .mismatch-val { color: #e53e3e; font-weight: bold; background: #fff5f5; padding: 2px 4px; border-radius: 4px; }
-        .source-name { font-size: 0.85em; color: #718096; display: block; margin-bottom: 2px; }
+        .mismatch { color: #dc2626; font-weight: bold; background: #fee2e2; }
+        .empty { color: #94a3b8; font-style: italic; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>Excel Validator: Contract vs. Active List</h2>
+<div class="card">
+    <h2>Excel Data Validator</h2>
+    <p>Upload both files to compare matching columns using <strong>PERSON_NUMBER</strong>.</p>
     
-    <div class="upload-grid">
-        <div class="file-input-group">
+    <div class="grid">
+        <div class="file-input">
             <strong>Active Employee List</strong><br>
             <input type="file" id="activeFile" accept=".xlsx, .xls">
         </div>
-        <div class="file-input-group">
+        <div class="file-input">
             <strong>Contract Management File</strong><br>
             <input type="file" id="contractFile" accept=".xlsx, .xls">
         </div>
     </div>
 
-    <button onclick="processFiles()">Compare Files Now</button>
+    <button class="btn-run" onclick="processValidation()">Run Validation Scan</button>
+    <button id="downloadBtn" class="btn-download" onclick="downloadErrorReport()">Download Error Report (.xlsx)</button>
 
-    <div id="output"></div>
+    <div id="summary"></div>
+    <div id="resultsTable"></div>
 </div>
 
 <script>
-async function processFiles() {
-    const activeFileInput = document.getElementById('activeFile').files[0];
-    const contractFileInput = document.getElementById('contractFile').files[0];
+let lastErrors = []; // Global store for downloading
 
-    if (!activeFileInput || !contractFileInput) {
-        alert("Please upload both Excel files first.");
+async function processValidation() {
+    const fileA = document.getElementById('activeFile').files[0];
+    const fileC = document.getElementById('contractFile').files[0];
+
+    if (!fileA || !fileC) {
+        alert("Please select both Excel files.");
         return;
     }
 
-    const activeData = await readExcel(activeFileInput);
-    const contractData = await readExcel(contractFileInput);
+    const dataA = await readExcel(fileA);
+    const dataC = await readExcel(fileC);
 
-    // Create a Map of the Active List using PERSON_NUMBER as key
+    // Columns to validate (matching exactly on both files)
+    const columns = [
+        'NATIONALITY', 'WORKER_CATEGORY', 'Age_H', 'JOB_NAME', 
+        'CONTRACT_END_DATE', 'PERFORMANCE_EVALUATION_TYPE', 
+        '2024_Evaluation', '2025_Evaluation'
+    ];
+
+    // Create Map for Active List (Source of Truth)
     const activeMap = new Map();
-    activeData.forEach(row => {
+    dataA.forEach(row => {
         if (row.PERSON_NUMBER) activeMap.set(String(row.PERSON_NUMBER), row);
     });
 
-    const results = [];
+    const errors = [];
 
-    // Columns to validate (Direct Match)
-    const directFields = ['NATIONALITY', 'WORKER_CATEGORY', 'Age_H', 'JOB_NAME', 'CONTRACT_END_DATE'];
-
-    contractData.forEach(cRow => {
-        const pId = String(cRow.PERSON_NUMBER);
+    // Compare Contract File against Active Map
+    dataC.forEach(cRow => {
+        const pId = String(cRow.PERSON_NUMBER || '');
         const aRow = activeMap.get(pId);
 
         if (aRow) {
-            // 1. Check Direct Matches
-            directFields.forEach(field => {
-                if (String(cRow[field] || '') !== String(aRow[field] || '')) {
-                    addError(results, pId, aRow.FULL_NAME_G, field, aRow[field], cRow[field]);
+            columns.forEach(col => {
+                const valA = String(aRow[col] || '').trim();
+                const valC = String(cRow[col] || '').trim();
+
+                if (valA !== valC) {
+                    errors.push({
+                        "Person Number": pId,
+                        "Full Name": aRow.FULL_NAME_G || 'Unknown',
+                        "Field": col,
+                        "Active List Value": valA || '(Empty)',
+                        "Contract File Value": valC || '(Empty)'
+                    });
                 }
             });
-
-            // 2. Check Renamed Evaluation Columns
-            // Checking 2024 Eval
-            if (String(cRow['EVALUATION_RATING__Y_2_'] || '') !== String(aRow['PERFORMANCE_EVALUATION_TYPE'] || '')) {
-                addError(results, pId, aRow.FULL_NAME_G, "2024 Eval (PERFORMANCE_EVALUATION_TYPE)", aRow['PERFORMANCE_EVALUATION_TYPE'], cRow['EVALUATION_RATING__Y_2_']);
-            }
-            // Checking 2025 Eval
-            if (String(cRow['EVALUATION_YEAR__Y_1_'] || '') !== String(aRow['PERFORMANCE_EVALUATION_TYPE'] || '')) {
-                addError(results, pId, aRow.FULL_NAME_G, "2025 Eval (PERFORMANCE_EVALUATION_TYPE)", aRow['PERFORMANCE_EVALUATION_TYPE'], cRow['EVALUATION_YEAR__Y_1_']);
-            }
         }
     });
 
-    displayResults(results);
+    lastErrors = errors;
+    displayResults(errors);
 }
 
 function readExcel(file) {
@@ -99,45 +109,52 @@ function readExcel(file) {
         const reader = new FileReader();
         reader.onload = (e) => {
             const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            const firstSheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[firstSheetName];
-            resolve(XLSX.utils.sheet_to_json(worksheet));
+            const wb = XLSX.read(data, { type: 'array' });
+            resolve(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]));
         };
         reader.readAsArrayBuffer(file);
     });
 }
 
-function addError(arr, id, name, field, activeVal, contractVal) {
-    arr.push({ id, name, field, activeVal: activeVal || '(Empty)', contractVal: contractVal || '(Empty)' });
-}
-
 function displayResults(errors) {
-    const output = document.getElementById('output');
+    const container = document.getElementById('resultsTable');
+    const summary = document.getElementById('summary');
+    const dlBtn = document.getElementById('downloadBtn');
+
     if (errors.length === 0) {
-        output.innerHTML = "<p style='color: green; margin-top: 20px;'>✅ Success! All data matches perfectly.</p>";
+        summary.innerHTML = "<h3 style='color:green'>✅ All records match perfectly!</h3>";
+        container.innerHTML = "";
+        dlBtn.style.display = "none";
         return;
     }
 
-    let html = `<table>
-        <tr>
-            <th>ID / Name</th>
-            <th>Field Name</th>
-            <th>Value in Active List</th>
-            <th>Value in Contract File</th>
-        </tr>`;
+    summary.innerHTML = `<h3>⚠️ Found ${errors.length} discrepancies</h3>`;
+    dlBtn.style.display = "block";
+
+    let html = `<table><tr>
+        <th>ID</th><th>Name</th><th>Column Name</th><th>Active List</th><th>Contract File</th>
+    </tr>`;
 
     errors.forEach(err => {
         html += `<tr>
-            <td><strong>${err.id}</strong><br><span class="source-name">${err.name}</span></td>
-            <td>${err.field}</td>
-            <td>${err.activeVal}</td>
-            <td class="mismatch-val">${err.contractVal}</td>
+            <td>${err["Person Number"]}</td>
+            <td>${err["Full Name"]}</td>
+            <td>${err["Field"]}</td>
+            <td>${err["Active List Value"]}</td>
+            <td class="mismatch">${err["Contract File Value"]}</td>
         </tr>`;
     });
 
     html += `</table>`;
-    output.innerHTML = html;
+    container.innerHTML = html;
+}
+
+function downloadErrorReport() {
+    if (lastErrors.length === 0) return;
+    const worksheet = XLSX.utils.json_to_sheet(lastErrors);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Discrepancies");
+    XLSX.writeFile(workbook, "Validation_Error_Report.xlsx");
 }
 </script>
 
