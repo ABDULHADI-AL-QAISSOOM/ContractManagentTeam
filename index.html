@@ -3,28 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Excel Data Validator</title>
+    <title>HR Data Validator - Optimized</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; --danger: #dc2626; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 2rem; }
-        .card { max-width: 1200px; margin: 0 auto; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        :root { --primary: #2563eb; --bg: #f8fafc; --text: #1e293b; --danger: #dc2626; --success: #10b981; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); padding: 2rem; }
+        .card { max-width: 1200px; margin: 0 auto; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
-        .file-input { border: 2px dashed #cbd5e1; padding: 1.5rem; border-radius: 8px; text-align: center; }
-        button { width: 100%; padding: 0.8rem; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; margin-bottom: 10px; }
+        .file-input { border: 2px dashed #cbd5e1; padding: 20px; border-radius: 8px; text-align: center; background: #fff; transition: 0.3s; }
+        .file-input:hover { border-color: var(--primary); background: #f0f7ff; }
+        button { width: 100%; padding: 0.8rem; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; margin-bottom: 10px; transition: 0.2s; }
         .btn-run { background: var(--primary); color: white; }
-        .btn-download { background: #10b981; color: white; display: none; }
-        table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; font-size: 0.85rem; }
-        th { background: #f1f5f9; padding: 12px; text-align: left; border: 1px solid #e2e8f0; }
-        td { padding: 10px; border: 1px solid #e2e8f0; }
+        .btn-run:hover { background: #1d4ed8; }
+        .btn-download { background: var(--success); color: white; display: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; font-size: 0.85rem; background: white; }
+        th { background: #f1f5f9; padding: 12px; text-align: left; border: 1px solid #e2e8f0; font-weight: 600; }
+        td { padding: 10px; border: 1px solid #e2e8f0; vertical-align: middle; }
         .mismatch { color: var(--danger); font-weight: bold; background: #fee2e2; }
+        .summary-box { padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>HR Data Validator</h2>
-    <p>Validating 10 columns across files based on <b>PERSON_NUMBER</b>.</p>
+    <h2 style="margin-top:0;">HR Data Validator</h2>
+    <p>Comparing files using <b>PERSON_NUMBER</b> as the unique ID.</p>
     
     <div class="grid">
         <div class="file-input">
@@ -40,30 +43,37 @@
     <button class="btn-run" onclick="processValidation()">Run Validation Scan</button>
     <button id="downloadBtn" class="btn-download" onclick="downloadErrorReport()">Download Error Report (.xlsx)</button>
 
-    <div id="summary"></div>
+    <div id="summary" class="summary-box"></div>
     <div id="resultsTable"></div>
 </div>
 
 <script>
 let lastErrors = [];
 
-// Helper function to handle Excel Date Serial Numbers vs Strings
-function formatValue(val) {
-    if (val === undefined || val === null) return "";
+// Helper to format values correctly for comparison
+function normalizeValue(val, columnName) {
+    if (val === undefined || val === null || val === "") return "";
     
-    // Check if it's an Excel Date (often imported as a Date Object by SheetJS)
-    if (val instanceof Date) {
-        return val.toISOString().split('T')[0]; // Returns YYYY-MM-DD
-    }
-    
-    // If it's a number that looks like an Excel date serial (e.g., 40000+)
-    if (typeof val === 'number' && val > 30000 && val < 60000) {
-        const date = XLSX.SSF.parse_date_code(val);
-        const month = String(date.m).padStart(2, '0');
-        const day = String(date.d).padStart(2, '0');
-        return `${date.y}-${month}-${day}`;
+    // 1. Handle AGE_HIJRI (Rounding to closest integer)
+    if (columnName === 'AGE_HIJRI') {
+        const num = parseFloat(val);
+        return isNaN(num) ? "" : Math.round(num).toString();
     }
 
+    // 2. Handle Date Objects (Standardize to YYYY-MM-DD)
+    if (val instanceof Date) {
+        return val.toISOString().split('T')[0];
+    }
+
+    // 3. Handle Excel Date Serial Numbers (e.g. 45352)
+    if (typeof val === 'number' && val > 30000 && val < 60000) {
+        const date = XLSX.SSF.parse_date_code(val);
+        const m = String(date.m).padStart(2, '0');
+        const d = String(date.d).padStart(2, '0');
+        return `${date.y}-${m}-${d}`;
+    }
+
+    // 4. Default: Trim and convert to String
     return String(val).trim();
 }
 
@@ -79,8 +89,9 @@ async function processValidation() {
     const dataA = await readExcel(fileA);
     const dataC = await readExcel(fileC);
 
+    // Updated column list as per your requirements
     const columns = [
-        'NATIONALITY', 'WORKER_CATEGORY', 'Age_H', 'AGE_HIJRI', 
+        'NATIONALITY', 'WORKER_TYPE', 'Age_H', 'AGE_HIJRI', 
         'JOB_NAME', 'CONTRACT_END_DATE', 'PERFORMANCE_EVALUATION_TYPE', 
         '2024_Evaluation', '2025_Evaluation'
     ];
@@ -98,13 +109,13 @@ async function processValidation() {
 
         if (aRow) {
             columns.forEach(col => {
-                const valA = formatValue(aRow[col]);
-                const valC = formatValue(cRow[col]);
+                const valA = normalizeValue(aRow[col], col);
+                const valC = normalizeValue(cRow[col], col);
 
                 if (valA !== valC) {
                     errors.push({
                         "Person Number": pId,
-                        "Full Name": aRow.FULL_NAME_G || 'Unknown',
+                        "Full Name": aRow.FULL_NAME_G || 'N/A',
                         "Field": col,
                         "Active List Value": valA,
                         "Contract File Value": valC
@@ -123,7 +134,6 @@ function readExcel(file) {
         const reader = new FileReader();
         reader.onload = (e) => {
             const data = new Uint8Array(e.target.result);
-            // cellDates: true ensures SheetJS tries to parse dates automatically
             const wb = XLSX.read(data, { type: 'array', cellDates: true });
             resolve(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]));
         };
@@ -136,18 +146,24 @@ function displayResults(errors) {
     const summary = document.getElementById('summary');
     const dlBtn = document.getElementById('downloadBtn');
 
+    summary.style.display = "block";
+
     if (errors.length === 0) {
-        summary.innerHTML = "<h3 style='color:green'>✅ All records match perfectly!</h3>";
+        summary.innerHTML = "✅ All records match perfectly!";
+        summary.style.background = "#dcfce7";
+        summary.style.color = "#166534";
         container.innerHTML = "";
         dlBtn.style.display = "none";
         return;
     }
 
-    summary.innerHTML = `<h3>⚠️ Found ${errors.length} Mismatches</h3>`;
+    summary.innerHTML = `⚠️ Found <b>${errors.length}</b> discrepancies. Review the table below.`;
+    summary.style.background = "#fee2e2";
+    summary.style.color = "#991b1b";
     dlBtn.style.display = "block";
 
     let html = `<table><tr>
-        <th>ID</th><th>Name</th><th>Field</th><th>Active List</th><th>Contract File</th>
+        <th>ID</th><th>Full Name</th><th>Column</th><th>Active List Value</th><th>Contract File Value</th>
     </tr>`;
 
     errors.forEach(err => {
@@ -165,10 +181,10 @@ function displayResults(errors) {
 }
 
 function downloadErrorReport() {
-    const worksheet = XLSX.utils.json_to_sheet(lastErrors);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Errors");
-    XLSX.writeFile(workbook, "Validation_Report.xlsx");
+    const ws = XLSX.utils.json_to_sheet(lastErrors);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Discrepancies");
+    XLSX.writeFile(wb, "HR_Validation_Report.xlsx");
 }
 </script>
 </body>
