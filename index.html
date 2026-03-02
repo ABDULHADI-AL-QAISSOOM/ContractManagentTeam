@@ -9,7 +9,7 @@
         :root {
             --primary: #115f66;
             --secondary: #009767;
-            --bg: #f4f7f6;
+            --bg: #f0f4f4;
             --card-bg: #ffffff;
             --text-main: #2d3748;
             --text-muted: #718096;
@@ -19,165 +19,182 @@
         }
 
         body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
             background-color: var(--bg);
             color: var(--text-main);
             margin: 0;
-            padding: 20px;
+            padding: 40px 20px;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+        .container { max-width: 1000px; margin: 0 auto; }
 
-        /* Instructions Styling */
-        .instructions {
+        .setup-guide {
             background: white;
-            border-left: 5px solid var(--secondary);
-            padding: 20px;
-            border-radius: 8px;
+            padding: 25px;
+            border-radius: 12px;
             margin-bottom: 30px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         }
 
-        .instructions h3 { margin-top: 0; color: var(--primary); }
-        .instructions ul { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; padding-left: 20px; }
-        .instructions li { font-size: 0.9rem; color: var(--text-main); }
+        .setup-guide h2 { color: var(--primary); margin-top: 0; font-size: 1.4rem; border-bottom: 2px solid var(--bg); padding-bottom: 10px; }
+        
+        .warning-box {
+            background: #fff9eb;
+            border: 1px solid #fbd38d;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            color: #744210;
+            font-size: 0.95rem;
+        }
+
+        .column-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .col-tag {
+            background: #edf2f7;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: var(--primary);
+            border: 1px solid #cbd5e0;
+        }
+
+        .note-card {
+            background: #e6fffa;
+            border: 1px solid #b2f5ea;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #234e52;
+        }
 
         .card {
             background: var(--card-bg);
             padding: 40px;
             border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            border: 1px solid var(--border);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
         }
 
-        .header-box { text-align: center; margin-bottom: 40px; }
-        .header-box h1 { color: var(--primary); margin: 0; font-size: 1.8rem; }
-
-        .upload-section {
+        .upload-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 30px;
+            gap: 25px;
             margin-bottom: 30px;
         }
 
-        .file-slot {
+        .drop-zone {
             border: 2px dashed var(--border);
             border-radius: 10px;
-            padding: 25px;
+            padding: 30px;
             text-align: center;
-            transition: 0.3s;
+            transition: 0.2s;
             cursor: pointer;
         }
 
-        .file-slot:hover { border-color: var(--secondary); background: #f0fdf9; }
-        .file-slot label { cursor: pointer; display: block; }
-        .file-slot b { display: block; color: var(--primary); margin-bottom: 5px; }
-        .file-slot input { display: none; }
+        .drop-zone:hover { border-color: var(--secondary); background: #f9fdfc; }
+        .drop-zone b { display: block; color: var(--primary); font-size: 1.1rem; }
+        .drop-zone small { color: var(--text-muted); }
 
-        .action-btns { display: flex; gap: 15px; }
-        
-        button {
-            flex: 1;
-            padding: 15px;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 1rem;
-            cursor: pointer;
-            border: none;
-            transition: 0.3s;
-        }
+        .btn-group { display: flex; gap: 15px; }
+        button { flex: 1; padding: 16px; border-radius: 8px; font-weight: bold; cursor: pointer; border: none; font-size: 1rem; transition: 0.2s; }
+        .btn-main { background: var(--primary); color: white; }
+        .btn-main:hover { background: #0a4a50; transform: translateY(-1px); }
+        .btn-dl { background: var(--secondary); color: white; display: none; }
 
-        .btn-compare { background: var(--primary); color: white; }
-        .btn-compare:hover { filter: brightness(1.2); }
-        .btn-export { background: var(--secondary); color: white; display: none; }
-        .btn-export:hover { filter: brightness(1.1); }
-
-        #summaryBox {
-            margin-top: 25px;
-            padding: 15px;
-            border-radius: 6px;
-            display: none;
-            text-align: center;
-            font-weight: 600;
-        }
-
-        .table-wrap { margin-top: 30px; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        table { width: 100%; border-collapse: collapse; margin-top: 30px; }
         th { background: var(--primary); color: white; padding: 12px; text-align: left; }
-        td { padding: 12px; border-bottom: 1px solid var(--border); }
-        .mismatch-cell { color: var(--error-text); background: var(--error-bg); font-weight: bold; border-radius: 4px; padding: 4px 8px; }
-        .source-cell { color: var(--secondary); font-weight: bold; }
+        td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+        .mismatch { color: var(--error-text); background: var(--error-bg); font-weight: bold; padding: 4px 8px; border-radius: 4px; }
+
+        /* Signature Styling */
+        footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+        }
+        .designer-name {
+            color: var(--primary);
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="instructions">
-        <h3>How to use the Tool</h3>
-        <p>This tool compares data in the <b>Contract Management File</b> against the <b>Active Employee List</b>. Discrepancies are flagged if the Contract file doesn't match the Source of Truth.</p>
-        <strong>Validated Columns:</strong>
-        <ul>
-            <li>PERSON_NUMBER (Key)</li>
-            <li>NATIONALITY</li>
-            <li>WORKER_TYPE</li>
-            <li>Age_H</li>
-            <li>AGE_HIJRI (Absolute)</li>
-            <li>JOB_NAME</li>
-            <li>CONTRACT_END_DATE</li>
-            <li>PERFORMANCE_EVALUATION_TYPE</li>
-            <li>2024_Evaluation</li>
-            <li>2025_Evaluation</li>
-        </ul>
+    <div class="setup-guide">
+        <h2>🛠 Pre-Validation Checklist</h2>
+        <div class="warning-box">
+            <strong>Critical:</strong> To ensure accurate results, verify that both files contain the <b>exact</b> column names listed below (case-sensitive). If the names do not match, the tool cannot link the data.
+        </div>
+        
+        <div class="column-grid">
+            <div class="col-tag">PERSON_NUMBER</div>
+            <div class="col-tag">FULL_NAME_G</div>
+            <div class="col-tag">NATIONALITY</div>
+            <div class="col-tag">WORKER_TYPE</div>
+            <div class="col-tag">Age_H</div>
+            <div class="col-tag">AGE_HIJRI</div>
+            <div class="col-tag">JOB_NAME</div>
+            <div class="col-tag">CONTRACT_END_DATE</div>
+            <div class="col-tag">PERFORMANCE_EVALUATION_TYPE</div>
+            <div class="col-tag">2024_Evaluation</div>
+            <div class="col-tag">2025_Evaluation</div>
+        </div>
+
+        <div class="note-card">
+            <b>💡 Note on AGE_HIJRI processing:</b> The tool automatically applies an <i>Absolute Integer</i> logic to this specific column. It ignores any decimals (e.g., 34.9 becomes 34) during comparison to ensure consistency.
+        </div>
     </div>
 
     <div class="card">
-        <div class="header-box">
-            <h1>HR Data Validation Dashboard</h1>
-        </div>
-
-        <div class="upload-section">
-            <div class="file-slot">
-                <label>
-                    <b>Active Employee List</b>
-                    <small>Source of Truth (.xlsx)</small>
-                    <input type="file" id="activeFile" accept=".xlsx, .xls">
-                </label>
+        <div class="upload-grid">
+            <div class="drop-zone" onclick="document.getElementById('fileA').click()">
+                <b>Active Employee List</b>
+                <small>Source of Truth</small>
+                <input type="file" id="fileA" style="display:none" accept=".xlsx, .xls">
             </div>
-            <div class="file-slot">
-                <label>
-                    <b>Contract Management File</b>
-                    <small>File to Check (.xlsx)</small>
-                    <input type="file" id="contractFile" accept=".xlsx, .xls">
-                </label>
+            <div class="drop-zone" onclick="document.getElementById('fileC').click()">
+                <b>Contract Management File</b>
+                <small>File to Validate</small>
+                <input type="file" id="fileC" style="display:none" accept=".xlsx, .xls">
             </div>
         </div>
 
-        <div class="action-btns">
-            <button class="btn-compare" onclick="runValidation()">Run Comparison</button>
-            <button id="dlBtn" class="btn-export" onclick="exportResults()">Download Discrepancy Report</button>
+        <div class="btn-group">
+            <button class="btn-main" onclick="validate()">Run Data Comparison</button>
+            <button id="dl" class="btn-dl" onclick="download()">Download Discrepancy Report</button>
         </div>
 
-        <div id="summaryBox"></div>
-        <div class="table-wrap" id="resultsArea"></div>
+        <div id="status" style="margin-top:20px; text-align:center; font-weight:bold; display:none;"></div>
+        <div id="results"></div>
     </div>
+
+    <footer>
+        Designed π <span class="designer-name">Hadi</span>
+    </footer>
 </div>
 
 <script>
-let logs = [];
+let errorResults = [];
 
-function clean(val, col) {
+function getCleanValue(val, colName) {
     if (val === undefined || val === null || val === "") return "";
     
-    // Logic: AGE_HIJRI uses Absolute Floor (34.9 becomes 34)
-    if (col === 'AGE_HIJRI') {
-        const num = parseFloat(val);
-        return isNaN(num) ? "" : Math.floor(num).toString();
+    if (colName === 'AGE_HIJRI') {
+        const n = parseFloat(val);
+        return isNaN(n) ? "" : Math.floor(n).toString();
     }
 
-    // Logic: Normalize Dates
     if (val instanceof Date) return val.toISOString().split('T')[0];
     if (typeof val === 'number' && val > 30000 && val < 60000) {
         const d = XLSX.SSF.parse_date_code(val);
@@ -187,47 +204,47 @@ function clean(val, col) {
     return String(val).trim();
 }
 
-async function runValidation() {
-    const fA = document.getElementById('activeFile').files[0];
-    const fC = document.getElementById('contractFile').files[0];
+async function validate() {
+    const fA = document.getElementById('fileA').files[0];
+    const fC = document.getElementById('fileC').files[0];
 
-    if (!fA || !fC) { alert("Please upload both files."); return; }
+    if (!fA || !fC) { alert("Please upload both Excel files."); return; }
 
-    const activeRows = await parse(fA);
-    const contractRows = await parse(fC);
+    const activeRows = await parseFile(fA);
+    const contractRows = await parseFile(fC);
 
-    const checkCols = ['NATIONALITY','WORKER_TYPE','Age_H','AGE_HIJRI','JOB_NAME','CONTRACT_END_DATE','PERFORMANCE_EVALUATION_TYPE','2024_Evaluation','2025_Evaluation'];
+    const cols = ['NATIONALITY', 'WORKER_TYPE', 'Age_H', 'AGE_HIJRI', 'JOB_NAME', 'CONTRACT_END_DATE', 'PERFORMANCE_EVALUATION_TYPE', '2024_Evaluation', '2025_Evaluation'];
 
     const activeMap = new Map();
     activeRows.forEach(r => { if(r.PERSON_NUMBER) activeMap.set(String(r.PERSON_NUMBER), r); });
 
-    logs = [];
+    errorResults = [];
     contractRows.forEach(cRow => {
         const id = String(cRow.PERSON_NUMBER || '');
         const aRow = activeMap.get(id);
 
         if (aRow) {
-            checkCols.forEach(col => {
-                const sVal = clean(aRow[col], col);
-                const cVal = clean(cRow[col], col);
+            cols.forEach(col => {
+                const sVal = getCleanValue(aRow[col], col);
+                const cVal = getCleanValue(cRow[col], col);
 
                 if (sVal !== cVal) {
-                    logs.push({
-                        "ID": id,
+                    errorResults.push({
+                        "Person Number": id,
                         "Name": aRow.FULL_NAME_G || 'N/A',
-                        "Field": col,
-                        "Active List (Correct)": sVal,
-                        "Contract File (Wrong)": cVal
+                        "Mismatch Column": col,
+                        "Correct (Active List)": sVal,
+                        "Error (Contract File)": cVal
                     });
                 }
             });
         }
     });
 
-    showUI();
+    renderUI();
 }
 
-function parse(file) {
+function parseFile(file) {
     return new Promise(res => {
         const r = new FileReader();
         r.onload = e => {
@@ -239,40 +256,41 @@ function parse(file) {
     });
 }
 
-function showUI() {
-    const summary = document.getElementById('summaryBox');
-    const tableArea = document.getElementById('resultsArea');
-    const dlBtn = document.getElementById('dlBtn');
+function renderUI() {
+    const status = document.getElementById('status');
+    const tableDiv = document.getElementById('results');
+    const dl = document.getElementById('dl');
 
-    summary.style.display = "block";
-    if (logs.length === 0) {
-        summary.innerHTML = "✅ Verification Successful: No discrepancies found.";
-        summary.style.background = "#e6fffa"; summary.style.color = "#234e52";
-        tableArea.innerHTML = ""; dlBtn.style.display = "none";
+    status.style.display = "block";
+    if (errorResults.length === 0) {
+        status.innerHTML = "✅ Verification Passed: No errors found.";
+        status.style.color = "var(--secondary)";
+        tableDiv.innerHTML = ""; dl.style.display = "none";
     } else {
-        summary.innerHTML = `⚠️ Found ${logs.length} mismatches in the Contract Management File.`;
-        summary.style.background = "#fff5f5"; summary.style.color = "#9b2c2c";
-        dlBtn.style.display = "block";
+        status.innerHTML = `⚠️ Verification Failed: Found ${errorResults.length} discrepancies.`;
+        status.style.color = "var(--error-text)";
+        dl.style.display = "block";
 
-        let h = `<table><thead><tr><th>Employee</th><th>Field</th><th>Source (Active)</th><th>Target (Contract)</th></tr></thead><tbody>`;
-        logs.forEach(e => {
-            h += `<tr>
-                <td><b>${e.ID}</b><br>${e.Name}</td>
-                <td><code>${e.Field}</code></td>
-                <td class="source-cell">${e["Active List (Correct)"]}</td>
-                <td><span class="mismatch-cell">${e["Contract File (Wrong)"]}</span></td>
+        let html = `<table><tr><th>Employee Info</th><th>Field</th><th>Expected</th><th>Found</th></tr>`;
+        errorResults.forEach(e => {
+            html += `<tr>
+                <td><b>${e["Person Number"]}</b><br>${e.Name}</td>
+                <td><code>${e["Mismatch Column"]}</code></td>
+                <td style="color:var(--secondary); font-weight:bold;">${e["Correct (Active List)"]}</td>
+                <td><span class="mismatch">${e["Error (Contract File)"]}</span></td>
             </tr>`;
         });
-        tableArea.innerHTML = h + "</tbody></table>";
+        tableDiv.innerHTML = html + "</table>";
     }
 }
 
-function exportResults() {
-    const ws = XLSX.utils.json_to_sheet(logs);
+function download() {
+    const ws = XLSX.utils.json_to_sheet(errorResults);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Errors");
     XLSX.writeFile(wb, "Validation_Report.xlsx");
 }
 </script>
+
 </body>
 </html>
